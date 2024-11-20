@@ -1,97 +1,119 @@
 version: "3.9"
-
+# Explicação
+# 1. Isolamento de Redes:
+# Cada banco de dados está conectado a duas redes:
+# - uma rede com sua aplicação correspondente (db1_net, db2_net, db3_net)
+# - uma sub-rede exclusiva para backups (backup1_net, backup2_net, backup3_net)
+# isso garante que os backups não tenham visibilidade para outros serviços
+# 2. Contêineres de Backup:
+# Contêineres de Backup:
+# - Contêineres baseados na imagem jadilsonpaiva/full são consifgurados em suas respectivas sub-redes
+#- Esses contêineres só podem comunicar-se com o banco de dados na mesma sub-rede
 services:
-  app1:
-    build:
-      context: ./app1
-    container_name: app1
-    networks:
-      app1_net:
-        ipv4_address: 10.10.10.2
-
-  app1_db:
-    image: postgres:alpine
-    container_name: app1_db
+  # Banco de Dados 1
+  db1:
+    image: mysql:5.7
+    container_name: db1
     environment:
-      POSTGRES_USER: user1
-      POSTGRES_PASSWORD: password1
-      POSTGRES_DB: db1
+      MYSQL_ROOT_PASSWORD: rootpassword1
+      MYSQL_DATABASE: db1
+      MYSQL_USER: user1
+      MYSQL_PASSWORD: password1
     networks:
-      app1_net:
-        ipv4_address: 10.10.10.3
+      db1_net:
+        ipv4_address: 10.10.11.2
+      backup1_net:
+        ipv4_address: 10.10.21.2
 
-  app2:
-    build:
-      context: ./app2
-    container_name: app2
+  # Contêiner de Backup 1
+  backup1:
+    image: jadilsonpaiva/full
+    container_name: backup1
     networks:
-      app2_net:
-        ipv4_address: 10.10.10.66
+      backup1_net:
+        ipv4_address: 10.10.21.3
 
-  app2_db:
-    image: postgres:alpine
-    container_name: app2_db
+  # Banco de Dados 2
+  db2:
+    image: mysql:5.7
+    container_name: db2
     environment:
-      POSTGRES_USER: user2
-      POSTGRES_PASSWORD: password2
-      POSTGRES_DB: db2
+      MYSQL_ROOT_PASSWORD: rootpassword2
+      MYSQL_DATABASE: db2
+      MYSQL_USER: user2
+      MYSQL_PASSWORD: password2
     networks:
-      app2_net:
-        ipv4_address: 10.10.10.67
+      db2_net:
+        ipv4_address: 10.10.12.2
+      backup2_net:
+        ipv4_address: 10.10.22.2
 
-  app3:
-    build:
-      context: ./app3
-    container_name: app3
+  # Contêiner de Backup 2
+  backup2:
+    image: jadilsonpaiva/full
+    container_name: backup2
     networks:
-      app3_net:
-        ipv4_address: 10.10.10.130
+      backup2_net:
+        ipv4_address: 10.10.22.3
 
-  app3_db:
-    image: postgres:alpine
-    container_name: app3_db
+  # Banco de Dados 3
+  db3:
+    image: mysql:5.7
+    container_name: db3
     environment:
-      POSTGRES_USER: user3
-      POSTGRES_PASSWORD: password3
-      POSTGRES_DB: db3
+      MYSQL_ROOT_PASSWORD: rootpassword3
+      MYSQL_DATABASE: db3
+      MYSQL_USER: user3
+      MYSQL_PASSWORD: password3
     networks:
-      app3_net:
-        ipv4_address: 10.10.10.131
+      db3_net:
+        ipv4_address: 10.10.13.2
+      backup3_net:
+        ipv4_address: 10.10.23.2
 
-  proxy:
-    build:
-      context: ./proxy
-    container_name: proxy
-    ports:
-      - "80:80"
+  # Contêiner de Backup 3
+  backup3:
+    image: jadilsonpaiva/full
+    container_name: backup3
     networks:
-      proxy_net:
-        ipv4_address: 10.10.10.194
-      app1_net:
-      app2_net:
-      app3_net:
+      backup3_net:
+        ipv4_address: 10.10.23.3
 
 networks:
-  app1_net:
+  # Redes existentes para bancos de dados
+  db1_net:
     ipam:
       driver: default
       config:
-        - subnet: 10.10.10.0/26
+        - subnet: 10.10.11.0/24
 
-  app2_net:
+  db2_net:
     ipam:
       driver: default
       config:
-        - subnet: 10.10.10.64/26
+        - subnet: 10.10.12.0/24
 
-  app3_net:
+  db3_net:
     ipam:
       driver: default
       config:
-        - subnet: 10.10.10.128/26
+        - subnet: 10.10.13.0/24
 
-  proxy_net:
+  # Sub-redes para backups
+  backup1_net:
     ipam:
       driver: default
       config:
-        - subnet: 10.10.10.192/26
+        - subnet: 10.10.21.0/24
+
+  backup2_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.10.22.0/24
+
+  backup3_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.10.23.0/24

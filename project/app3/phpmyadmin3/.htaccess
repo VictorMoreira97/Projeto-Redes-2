@@ -1,0 +1,5 @@
+<IfModule mod_authz_core.c>
+    Require ip 10.10.11.0/24
+    Require ip 10.10.12.0/24
+    Require ip 10.10.13.0/24
+</IfModule>
