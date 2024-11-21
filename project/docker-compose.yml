@@ -1,14 +1,5 @@
 version: "3.9"
-# Explicação
-# 1. Isolamento de Redes:
-# Cada banco de dados está conectado a duas redes:
-# - uma rede com sua aplicação correspondente (db1_net, db2_net, db3_net)
-# - uma sub-rede exclusiva para backups (backup1_net, backup2_net, backup3_net)
-# isso garante que os backups não tenham visibilidade para outros serviços
-# 2. Contêineres de Backup:
-# Contêineres de Backup:
-# - Contêineres baseados na imagem jadilsonpaiva/full são consifgurados em suas respectivas sub-redes
-#- Esses contêineres só podem comunicar-se com o banco de dados na mesma sub-rede
+
 services:
   # Banco de Dados 1
   db1:
@@ -21,17 +12,18 @@ services:
       MYSQL_PASSWORD: password1
     networks:
       db1_net:
-        ipv4_address: 10.10.11.2
-      backup1_net:
-        ipv4_address: 10.10.21.2
+        ipv4_address: 10.10.10.2
 
-  # Contêiner de Backup 1
-  backup1:
-    image: jadilsonpaiva/full
-    container_name: backup1
+  phpmyadmin1:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin1
+    environment:
+      PMA_HOST: 10.10.10.2
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword1
     networks:
-      backup1_net:
-        ipv4_address: 10.10.21.3
+      db1_net:
+        ipv4_address: 10.10.10.3
 
   # Banco de Dados 2
   db2:
@@ -44,17 +36,18 @@ services:
       MYSQL_PASSWORD: password2
     networks:
       db2_net:
-        ipv4_address: 10.10.12.2
-      backup2_net:
-        ipv4_address: 10.10.22.2
+        ipv4_address: 10.10.10.17
 
-  # Contêiner de Backup 2
-  backup2:
-    image: jadilsonpaiva/full
-    container_name: backup2
+  phpmyadmin2:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin2
+    environment:
+      PMA_HOST: 10.10.10.17
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword2
     networks:
-      backup2_net:
-        ipv4_address: 10.10.22.3
+      db2_net:
+        ipv4_address: 10.10.10.18
 
   # Banco de Dados 3
   db3:
@@ -67,53 +60,83 @@ services:
       MYSQL_PASSWORD: password3
     networks:
       db3_net:
-        ipv4_address: 10.10.13.2
-      backup3_net:
-        ipv4_address: 10.10.23.2
+        ipv4_address: 10.10.10.33
+
+  phpmyadmin3:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin3
+    environment:
+      PMA_HOST: 10.10.10.33
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword3
+    networks:
+      db3_net:
+        ipv4_address: 10.10.10.34
+
+  # Proxy reverso para acesso via URL
+  proxy:
+    image: nginx:alpine
+    container_name: proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      db1_net:
+      db2_net:
+      db3_net:
+
+  # Contêiner de Backup 1
+  backup1:
+    image: jadilsonpaiva/full
+    container_name: backup1
+    networks:
+      db1_net:
+        ipv4_address: 10.10.10.4
+
+  # Contêiner de Backup 2
+  backup2:
+    image: jadilsonpaiva/full
+    container_name: backup2
+    networks:
+      db2_net:
+        ipv4_address: 10.10.10.19
 
   # Contêiner de Backup 3
   backup3:
     image: jadilsonpaiva/full
     container_name: backup3
     networks:
-      backup3_net:
-        ipv4_address: 10.10.23.3
+      db3_net:
+        ipv4_address: 10.10.10.35
 
 networks:
-  # Redes existentes para bancos de dados
   db1_net:
     ipam:
       driver: default
       config:
-        - subnet: 10.10.11.0/24
+        - subnet: 10.10.10.0/28
 
   db2_net:
     ipam:
       driver: default
       config:
-        - subnet: 10.10.12.0/24
+        - subnet: 10.10.10.16/28
 
   db3_net:
     ipam:
       driver: default
       config:
-        - subnet: 10.10.13.0/24
+        - subnet: 10.10.10.32/28
 
-  # Sub-redes para backups
-  backup1_net:
-    ipam:
-      driver: default
-      config:
-        - subnet: 10.10.21.0/24
-
-  backup2_net:
-    ipam:
-      driver: default
-      config:
-        - subnet: 10.10.22.0/24
-
-  backup3_net:
-    ipam:
-      driver: default
-      config:
-        - subnet: 10.10.23.0/24
+proxy:
+  image: nginx:alpine
+  container_name: proxy
+  ports:
+    - "80:80"
+  volumes:
+    - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+  networks:
+    db1_net:
+    db2_net:
+    db3_net:
