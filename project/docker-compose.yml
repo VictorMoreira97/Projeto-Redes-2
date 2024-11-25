@@ -1,18 +1,18 @@
 version: "3.9"
 
 services:
-
-proxy:
-  image: nginx:alpine
-  container_name: proxy
-  ports:
-    - "80:80"
-  volumes:
-    - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-  networks:
-    db1_net:
-    db2_net:
-    db3_net:
+  # Proxy reverso para acesso via URL
+  proxy:
+    image: nginx:alpine
+    container_name: proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      db1_net:
+      db2_net:
+      db3_net:
 
   # Banco de Dados 1
   db1:
@@ -85,19 +85,6 @@ proxy:
     networks:
       db3_net:
         ipv4_address: 10.10.10.34
-
-  # Proxy reverso para acesso via URL
-  proxy:
-    image: nginx:alpine
-    container_name: proxy
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-    networks:
-      db1_net:
-      db2_net:
-      db3_net:
 
   # Contêiner de Backup 1
   backup1:
