@@ -1,16 +1,18 @@
 services:
-  # Proxy reverso para acesso via URL
+
+  # Proxy Reverso
   proxy:
     image: nginx:alpine
     container_name: proxy
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - /root/Desktop/projetc/proxy/nginx.conf:/etc/nginx/nginx.conf
     networks:
       - db1_net
       - db2_net
       - db3_net
+      - proxy_net
 
   # Banco de Dados 1
   db1:
@@ -23,18 +25,21 @@ services:
       MYSQL_PASSWORD: password1
     networks:
       db1_net:
-        ipv4_address: 10.10.10.2
+        ipv4_address: 10.10.10.10  # IP fixo para db1
 
+  # phpMyAdmin 1
   phpmyadmin1:
     image: phpmyadmin/phpmyadmin
+    ports:
+      - "8082:80"
     container_name: phpmyadmin1
     environment:
-      PMA_HOST: 10.10.10.2
+      PMA_HOST: 10.10.10.10  # Apontando para o IP fixo do db1
       PMA_USER: root
       PMA_PASSWORD: rootpassword1
     networks:
-      db1_net:
-        ipv4_address: 10.10.10.3
+      - db1_net
+      - proxy_net
 
   # Banco de Dados 2
   db2:
@@ -47,18 +52,21 @@ services:
       MYSQL_PASSWORD: password2
     networks:
       db2_net:
-        ipv4_address: 10.10.10.18
+        ipv4_address: 10.10.10.20  # IP fixo para db2
 
+  # phpMyAdmin 2
   phpmyadmin2:
     image: phpmyadmin/phpmyadmin
+    ports:
+      - "8083:80"
     container_name: phpmyadmin2
     environment:
-      PMA_HOST: 10.10.10.18
+      PMA_HOST: 10.10.10.20  # Apontando para o IP fixo do db2
       PMA_USER: root
       PMA_PASSWORD: rootpassword2
     networks:
-      db2_net:
-        ipv4_address: 10.10.10.19
+      - db2_net
+      - proxy_net
 
   # Banco de Dados 3
   db3:
@@ -71,58 +79,57 @@ services:
       MYSQL_PASSWORD: password3
     networks:
       db3_net:
-        ipv4_address: 10.10.10.34
+        ipv4_address: 10.10.10.35  # IP fixo para db3
 
+  # phpMyAdmin 3
   phpmyadmin3:
     image: phpmyadmin/phpmyadmin
+    ports:
+      - "8084:80"
     container_name: phpmyadmin3
     environment:
-      PMA_HOST: 10.10.10.34
+      PMA_HOST: 10.10.10.35  # Apontando para o IP fixo do db3
       PMA_USER: root
       PMA_PASSWORD: rootpassword3
     networks:
-      db3_net:
-        ipv4_address: 10.10.10.35
+      - db3_net
+      - proxy_net
 
   # Contêiner de Backup 1
   backup1:
     image: jadilsonpaiva/full
     container_name: backup1
     networks:
-      db1_net:
-        ipv4_address: 10.10.10.4
+      - db1_net
 
   # Contêiner de Backup 2
   backup2:
     image: jadilsonpaiva/full
     container_name: backup2
     networks:
-      db2_net:
-        ipv4_address: 10.10.10.20
+      - db2_net
 
   # Contêiner de Backup 3
   backup3:
     image: jadilsonpaiva/full
     container_name: backup3
     networks:
-      db3_net:
-        ipv4_address: 10.10.10.36
+      - db3_net
 
 networks:
   db1_net:
     ipam:
-      driver: default
       config:
         - subnet: 10.10.10.0/28
-
   db2_net:
     ipam:
-      driver: default
       config:
         - subnet: 10.10.10.16/28
-
   db3_net:
     ipam:
-      driver: default
       config:
         - subnet: 10.10.10.32/28
+  proxy_net:
+    ipam:
+      config:
+        - subnet: 10.10.10.48/28
